@@ -1,32 +1,61 @@
 pipeline {
-    agent any
+  agent any
+  options {
+      // Keep the 10 most recent builds
+      buildDiscarder(logRotator(numToKeepStr:'10'))
+  }
+  tools {
+      maven 'jenkins-maven'
+      jdk 'JDK'
+  }
+  stages {
+    stage ('Initialize') {
+        steps {
+            bat "echo %PATH%"
 
-    tools {
-        // Install the Maven version configured as "M3" and add it to the path.
-        maven "M3"
+            echo "${env.GIT_BRANCH}"
+        }
     }
-
-    stages {
-        stage('Build') {
-            steps {
-                // Get some code from a GitHub repository
-                git 'https://github.com/corbroekhuis/jenkins2024.git'
-
-                // Run Maven on a Unix agent.
-                // sh "mvn -Dmaven.test.failure.ignore=true clean package"
-
-                // To run Maven on a Windows agent, use
-                bat "mvn -Dmaven.test.failure.ignore=true clean package"
-            }
-
-            post {
-                // If Maven was able to run the tests, even if some of the test
-                // failed, record the test results and archive the jar file.
-                success {
-                    junit '**/target/surefire-reports/TEST-*.xml'
-                    archiveArtifacts 'target/*.jar'
-                }
+    stage ('Stop Containers') {
+        steps {
+          bat 'docker compose -f docker-compose-acc.yml down'
+        }
+    }
+    stage ('Test') {
+        steps {
+            bat 'mvn -Dmaven.test.failure.ignore=true test'
+        }
+        post {
+            success {
+                junit 'target/surefire-reports/**/*.xml'
             }
         }
     }
+    stage ('Build') {
+        steps {
+            bat 'mvn -Dskip.tests=true package'
+        }
+
+    }
+    stage ('Start Containers') {
+        steps {
+            bat 'docker compose -f docker-compose-acc.yml up -d --build'
+        }
+    }
+    stage('Finalize') {
+      steps {
+        bat 'echo "Finalizing"'
+      }
+      post{
+        always {
+         mail bcc: '', body: 'Pipeline has been succesfully executed ', cc: '', from: 'cornelius.broekhuis@capgemini.com', replyTo: 'cornelius.broekhuis@capgemini.com', subject: 'Pipeline has been succesfully executed ', to: 'cornelius.broekhuis@capgemini.com'
+        }
+      }
+    }
+
+  }
+  environment {
+    DEMO = 'Mvn'
+  }
+
 }
