@@ -7,7 +7,6 @@ services:
 
   app-service:
     build: .
-    image: movietheater-image
     ports:
       - "8881:8080"
 
