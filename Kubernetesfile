@@ -17,8 +17,17 @@ pipeline {
         }
     }
     stage ('Stop Pods') {
+
         steps {
-          bat 'kubectl delete -f deployment.yml'
+
+          script {
+            try {
+              bat 'kubectl delete -f deployment.yml'
+            } catch (Exception e) {
+               echo "No pods running..."
+            }
+          }
+
         }
     }
     stage ('Test') {
@@ -33,9 +42,7 @@ pipeline {
     }
     stage ('Build') {
         steps {
-          script {
             bat 'mvn -Dskip.tests=true package'
-          }
         }
     }
     stage ('Start Pods') {
