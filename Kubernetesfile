@@ -18,7 +18,6 @@ pipeline {
     }
     stage ('Stop Pods') {
         steps {
-          bat 'kubectl delete -f service.yml'
           bat 'kubectl delete -f deployment.yml'
         }
     }
