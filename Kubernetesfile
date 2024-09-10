@@ -32,10 +32,10 @@ pipeline {
         }
     }
     stage ('Build') {
-        script {
-
-          bat 'mvn -Dskip.tests=true package'
-
+        steps {
+          script {
+            bat 'mvn -Dskip.tests=true package'
+          }
         }
     }
     stage ('Start Pods') {
